@@ -1,4 +1,4 @@
-import { event } from '@tauri-apps/api';
+import { event } from "@tauri-apps/api";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,13 +9,15 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-} from 'chart.js';
-import { useEffect, useRef, useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import { Proc } from '../lib/bindings/Proc';
-import { listen } from '@tauri-apps/api/event';
-import { CpuStat } from '../lib/bindings/CpuStat';
-import { SingleCpu } from '../lib/bindings/SingleCpu';
+  ChartArea,
+  Filler,
+} from "chart.js";
+import { useEffect, useRef, useState } from "react";
+import { Line } from "react-chartjs-2";
+import { Proc } from "../lib/bindings/Proc";
+import { listen } from "@tauri-apps/api/event";
+import { CpuStat } from "../lib/bindings/CpuStat";
+import { SingleCpu } from "../lib/bindings/SingleCpu";
 
 ChartJS.register(
   CategoryScale,
@@ -24,76 +26,93 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler,
 );
 
 const options: ChartOptions<"line"> = {
   responsive: true,
   plugins: {
     legend: {
-      position: 'top' as const,
-    },
-    title: {
-      display: true,
-      text: 'Chart.js Line Chart',
+      display: false,
     },
   },
   scales: {
     x: {
-      ticks: {
-        display: false, // Disable x axis values display
-      }
+      display: false,
     },
     y: {
       min: 0,
       max: 100,
-    }
+    },
   },
-  
 };
+
+function createGradient(
+  ctx: CanvasRenderingContext2D,
+  area: ChartArea,
+  alpha: number,
+) {
+  const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+
+  gradient.addColorStop(0, `rgba(0, 255, 0, ${alpha})`);
+  gradient.addColorStop(0.5, `rgba(255, 255, 0, ${alpha})`);
+  gradient.addColorStop(1, `rgba(255, 0, 0, ${alpha})`);
+
+  return gradient;
+}
 
 export function Cpu() {
   const [labels, setLabels] = useState([1, 2, 3, 4, 5, 6, 7]);
   const [dataset, setDataset] = useState([1, 2, 3, 4, 5, 6, 7]);
   const [dd, setDd] = useState<SingleCpu>();
+  const chartRef = useRef<ChartJS<"line"> | null>(null);
 
   const data = {
     labels,
     datasets: [
       {
-        label: 'Dataset 1',
         data: dataset,
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        fill: true,
+        borderColor:
+          (chartRef.current &&
+            createGradient(
+              chartRef.current.ctx,
+              chartRef.current.chartArea,
+              1.0,
+            )) ??
+          "red",
+        backgroundColor:
+          (chartRef.current &&
+            createGradient(
+              chartRef.current.ctx,
+              chartRef.current.chartArea,
+              0.2,
+            )) ??
+          "red",
       },
     ],
   };
 
   useEffect(() => {
     const unlisten = listen<CpuStat>("cpu", (event) => {
-      setDd(event.payload.cpu)
+      setDd(event.payload.cpu);
     });
 
     return () => {
-      unlisten.then(f => f());
-    }
+      unlisten.then((f) => f());
+    };
   }, []);
 
-    const [n, setN] = useState(0);
-
   useEffect(() => {
-    setDataset(d => {
+    setDataset((d) => {
       if (dd) {
         d = d.slice(1);
         d.push(dd.user);
       }
-      return d
+      return d;
     });
   }, [dd]);
 
-
-  return <>
-    <button onClick={() => setN(n => n + 1)}>Click me {n}</button>
-    <Line data={data} options={options} />
-  </>
+  return <Line data={data} options={options} ref={chartRef} />;
 }

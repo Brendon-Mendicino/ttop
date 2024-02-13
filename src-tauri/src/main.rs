@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use sys::Sys;
 use tauri::{CustomMenuItem, Manager, Menu, Submenu};
-use tokio::runtime::Handle;
 
 mod proc;
 mod sys;

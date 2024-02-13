@@ -22,11 +22,9 @@ function App() {
     });
 
     return () => {
-      unlisten.then(f => f());
-    }
+      unlisten.then((f) => f());
+    };
   }, []);
-
-
 
   return (
     <div className="container">
