@@ -1,4 +1,3 @@
-import { event } from "@tauri-apps/api";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,10 +13,10 @@ import {
 } from "chart.js";
 import { useEffect, useRef, useState } from "react";
 import { Line } from "react-chartjs-2";
-import { Proc } from "../lib/bindings/Proc";
 import { listen } from "@tauri-apps/api/event";
 import { CpuStat } from "../lib/bindings/CpuStat";
 import { SingleCpu } from "../lib/bindings/SingleCpu";
+import { range } from "../lib/array/array";
 
 ChartJS.register(
   CategoryScale,
@@ -63,13 +62,12 @@ function createGradient(
 }
 
 export function Cpu() {
-  const [labels, setLabels] = useState([1, 2, 3, 4, 5, 6, 7]);
-  const [dataset, setDataset] = useState([1, 2, 3, 4, 5, 6, 7]);
+  const [dataset, setDataset] = useState([...range(0, 20)].map(() => 0));
   const [dd, setDd] = useState<SingleCpu>();
   const chartRef = useRef<ChartJS<"line"> | null>(null);
 
   const data = {
-    labels,
+    labels: [...range(0, 20)],
     datasets: [
       {
         data: dataset,
